@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Code Generator — Sun × Senestia</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+  :root {
+    --navy: #161533;
+    --navy-deep: #0a0a1f;
+    --pink: #ec4b8a;
+    --pink-soft: #f9a8c4;
+    --cream: #fefcf8;
+    --ink: #1a1a2e;
+    --muted: #6b6b85;
+    --line: rgba(22, 21, 51, 0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter Tight', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 32px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.3;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+    padding: 24px 0;
+  }
+
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--pink);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(36px, 5vw, 56px);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    color: var(--navy);
+    line-height: 1;
+  }
+
+  h1 .italic {
+    font-style: italic;
+    color: var(--pink);
+  }
+
+  .subtitle {
+    color: var(--muted);
+    margin-top: 12px;
+    font-size: 16px;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 48px;
+    align-items: start;
+  }
+
+  /* ============ CONTROL PANEL ============ */
+  .panel {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 4px 20px rgba(22, 21, 51, 0.04);
+  }
+
+  .panel-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .field {
+    margin-bottom: 24px;
+  }
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--navy);
+    margin-bottom: 8px;
+    letter-spacing: 0.02em;
+  }
+
+  input[type="text"],
+  input[type="url"] {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--cream);
+    transition: all 0.2s;
+  }
+
+  input[type="text"]:focus,
+  input[type="url"]:focus {
+    outline: none;
+    border-color: var(--pink);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(236, 75, 138, 0.1);
+  }
+
+  .color-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .color-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--cream);
+    padding: 4px 4px 4px 12px;
+    overflow: hidden;
+  }
+
+  .color-input-wrap input[type="color"] {
+    width: 40px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 6px;
+  }
+
+  .color-input-wrap input[type="text"] {
+    border: none;
+    padding: 8px 4px;
+    background: transparent;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    width: 100%;
+  }
+
+  .color-input-wrap input[type="text"]:focus {
+    box-shadow: none;
+  }
+
+  /* Preset palettes */
+  .presets {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .preset-btn {
+    aspect-ratio: 1;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+    overflow: hidden;
+  }
+
+  .preset-btn:hover {
+    transform: translateY(-2px);
+    border-color: var(--pink);
+  }
+
+  .preset-btn.active {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 2px white inset;
+  }
+
+  .preset-btn .swatch-fg {
+    position: absolute;
+    width: 60%;
+    height: 60%;
+    top: 20%;
+    left: 20%;
+    border-radius: 4px;
+  }
+
+  /* Toggle */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+  }
+
+  .toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: var(--line);
+    border-radius: 100px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .toggle.on { background: var(--pink); }
+
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    transition: left 0.2s;
+  }
+
+  .toggle.on::after { left: 23px; }
+
+  /* Size slider */
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: var(--line);
+    border-radius: 100px;
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: var(--pink);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(236, 75, 138, 0.4);
+  }
+
+  .slider-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    min-width: 50px;
+    text-align: right;
+  }
+
+  /* Download buttons */
+  .download-group {
+    display: grid;
+    gap: 10px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+  }
+
+  .btn {
+    padding: 14px 24px;
+    border-radius: 100px;
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: var(--navy);
+    color: var(--cream);
+  }
+
+  .btn-primary:hover {
+    background: var(--pink);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(236, 75, 138, 0.3);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--navy);
+    border: 1px solid var(--line);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--navy);
+    background: var(--navy);
+    color: var(--cream);
+  }
+
+  /* ============ PREVIEW ============ */
+  .preview-area {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 48px;
+    box-shadow: 0 4px 20px rgba(22, 21, 51, 0.04);
+    min-height: 600px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .preview-area::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    right: -100px;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(236, 75, 138, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .qr-stage {
+    position: relative;
+    padding: 40px;
+    background: white;
+    border-radius: 24px;
+    box-shadow:
+      0 1px 2px rgba(22, 21, 51, 0.04),
+      0 8px 24px rgba(22, 21, 51, 0.08),
+      0 30px 80px rgba(22, 21, 51, 0.12);
+    z-index: 2;
+  }
+
+  #qrcode {
+    position: relative;
+  }
+
+  #qrcode canvas,
+  #qrcode img {
+    display: block;
+    border-radius: 12px;
+  }
+
+  /* Logo overlay */
+  .logo-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    background: white;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    padding: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .logo-overlay svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Preview caption */
+  .preview-caption {
+    text-align: center;
+    margin-top: 32px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .caption-name {
+    font-family: 'Fraunces', serif;
+    font-size: 24px;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+
+  .caption-role {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* Wallpaper preview frame */
+  .wallpaper-mode .preview-area {
+    background: var(--navy);
+    color: var(--cream);
+    padding: 80px 48px;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--navy);
+    color: var(--cream);
+    padding: 14px 24px;
+    border-radius: 100px;
+    font-size: 14px;
+    z-index: 1000;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  }
+
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Footer hint */
+  .hint {
+    margin-top: 24px;
+    padding: 16px 20px;
+    background: var(--cream);
+    border-radius: 12px;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+    border-left: 3px solid var(--pink);
+  }
+
+  .hint strong { color: var(--navy); }
+
+  @media (max-width: 900px) {
+    .layout {
+      grid-template-columns: 1fr;
+    }
+    body { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="eyebrow">— QR Code Studio</div>
+    <h1>Make your <span class="italic">mark.</span></h1>
+    <p class="subtitle">Branded QR code generator with logo — built in browser, nothing leaves your device</p>
+  </header>
+
+  <div class="layout">
+
+    <!-- CONTROL PANEL -->
+    <div class="panel">
+      <div class="panel-title">— Controls</div>
+
+      <div class="field">
+        <label>Destination URL</label>
+        <input type="url" id="url" value="https://noppon-card.vercel.app" placeholder="https://your-landing-page.com">
+      </div>
+
+      <div class="field">
+        <label>Color Presets</label>
+        <div class="presets">
+          <button class="preset-btn active" data-fg="#161533" data-bg="#FEFCF8" title="Senestia Classic">
+            <div class="swatch-fg" style="background: #161533;"></div>
+          </button>
+          <button class="preset-btn" data-fg="#EC4B8A" data-bg="#FEFCF8" title="Senestia Pink">
+            <div class="swatch-fg" style="background: #EC4B8A;"></div>
+          </button>
+          <button class="preset-btn" data-fg="#FEFCF8" data-bg="#161533" title="Dark Mode">
+            <div class="swatch-fg" style="background: #FEFCF8;"></div>
+          </button>
+          <button class="preset-btn" data-fg="#000000" data-bg="#FFFFFF" title="Pure B&W">
+            <div class="swatch-fg" style="background: #000;"></div>
+          </button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Custom Colors</label>
+        <div class="color-row">
+          <div class="color-input-wrap">
+            <input type="color" id="fgColor" value="#161533">
+            <input type="text" id="fgHex" value="#161533">
+          </div>
+          <div class="color-input-wrap">
+            <input type="color" id="bgColor" value="#FEFCF8">
+            <input type="text" id="bgHex" value="#FEFCF8">
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Show Senestia Logo</label>
+        <div class="toggle-row">
+          <span style="font-size: 13px; color: var(--muted);">Center logo overlay</span>
+          <div class="toggle on" id="logoToggle"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Export Size</label>
+        <div class="slider-row">
+          <input type="range" id="sizeSlider" min="512" max="4096" value="2048" step="128">
+          <span class="slider-value" id="sizeValue">2048px</span>
+        </div>
+      </div>
+
+      <div class="download-group">
+        <button class="btn btn-primary" onclick="downloadPNG()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+          Download PNG
+        </button>
+        <button class="btn btn-secondary" onclick="downloadWallpaper()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2"/>
+            <line x1="8" y1="21" x2="16" y2="21"/>
+            <line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+          Download as Wallpaper
+        </button>
+      </div>
+
+      <div class="hint">
+        <strong>💡 Tip:</strong> ก่อนใช้จริง ทดสอบสแกนด้วยกล้อง iPhone และ Android ก่อนทุกครั้ง โดยเฉพาะถ้าใช้สีอ่อนหรือ contrast ต่ำ
+      </div>
+    </div>
+
+    <!-- PREVIEW -->
+    <div class="preview-area" id="previewArea">
+      <div class="qr-stage" id="qrStage">
+        <div id="qrcode"></div>
+        <div class="logo-overlay" id="logoOverlay">
+          <!-- Senestia logo SVG -->
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="senestia-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#EC4B8A"/>
+                <stop offset="100%" style="stop-color:#7C3AED"/>
+              </linearGradient>
+            </defs>
+            <path d="M 30 20 Q 70 20 70 50 Q 70 80 30 80 L 30 65 Q 55 65 55 50 Q 55 35 30 35 Z" fill="url(#senestia-grad)"/>
+          </svg>
+        </div>
+      </div>
+      <div class="preview-caption">
+        <div class="caption-name">Noppon "Sun" Siangchin</div>
+        <div class="caption-role">Senior Data Analyst · Senestia</div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="toast" id="toast">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+  <span id="toastMsg">Downloaded!</span>
+</div>
+
+<script>
+  let qrcode;
+  let currentFg = '#161533';
+  let currentBg = '#FEFCF8';
+  let showLogo = true;
+
+  function initQR() {
+    const url = document.getElementById('url').value;
+    const container = document.getElementById('qrcode');
+    container.innerHTML = '';
+
+    qrcode = new QRCode(container, {
+      text: url || 'https://example.com',
+      width: 320,
+      height: 320,
+      colorDark: currentFg,
+      colorLight: currentBg,
+      correctLevel: QRCode.CorrectLevel.H  // High = 30% error tolerance (needed for logo overlay)
+    });
+  }
+
+  // Update on URL change
+  document.getElementById('url').addEventListener('input', initQR);
+
+  // Color sync
+  function syncColors() {
+    document.getElementById('fgHex').value = currentFg;
+    document.getElementById('bgHex').value = currentBg;
+    document.getElementById('fgColor').value = currentFg;
+    document.getElementById('bgColor').value = currentBg;
+    initQR();
+  }
+
+  document.getElementById('fgColor').addEventListener('input', (e) => {
+    currentFg = e.target.value;
+    syncColors();
+  });
+
+  document.getElementById('bgColor').addEventListener('input', (e) => {
+    currentBg = e.target.value;
+    syncColors();
+  });
+
+  document.getElementById('fgHex').addEventListener('change', (e) => {
+    if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+      currentFg = e.target.value;
+      syncColors();
+    }
+  });
+
+  document.getElementById('bgHex').addEventListener('change', (e) => {
+    if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+      currentBg = e.target.value;
+      syncColors();
+    }
+  });
+
+  // Presets
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFg = btn.dataset.fg;
+      currentBg = btn.dataset.bg;
+      syncColors();
+    });
+  });
+
+  // Logo toggle
+  document.getElementById('logoToggle').addEventListener('click', () => {
+    showLogo = !showLogo;
+    document.getElementById('logoToggle').classList.toggle('on');
+    document.getElementById('logoOverlay').style.display = showLogo ? 'flex' : 'none';
+  });
+
+  // Size slider
+  document.getElementById('sizeSlider').addEventListener('input', (e) => {
+    document.getElementById('sizeValue').textContent = e.target.value + 'px';
+  });
+
+  // Toast
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+
+  // Senestia logo as SVG string for export
+  const senestiaLogoSVG = `
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#EC4B8A"/>
+          <stop offset="100%" style="stop-color:#7C3AED"/>
+        </linearGradient>
+      </defs>
+      <path d="M 30 20 Q 70 20 70 50 Q 70 80 30 80 L 30 65 Q 55 65 55 50 Q 55 35 30 35 Z" fill="url(#g)"/>
+    </svg>
+  `;
+
+  // Convert SVG to image
+  function svgToImage(svgString) {
+    return new Promise((resolve) => {
+      const blob = new Blob([svgString], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        resolve(img);
+      };
+      img.src = url;
+    });
+  }
+
+  // Download PNG (just the QR)
+  async function downloadPNG() {
+    const size = parseInt(document.getElementById('sizeSlider').value);
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    // Background
+    ctx.fillStyle = currentBg;
+    ctx.fillRect(0, 0, size, size);
+
+    // Get QR canvas
+    const qrCanvas = document.querySelector('#qrcode canvas');
+    if (qrCanvas) {
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(qrCanvas, 0, 0, size, size);
+    }
+
+    // Add logo if enabled
+    if (showLogo) {
+      const logoImg = await svgToImage(senestiaLogoSVG);
+      const logoSize = size * 0.18;
+      const logoX = (size - logoSize) / 2;
+      const logoY = (size - logoSize) / 2;
+
+      // White background box for logo
+      const padding = logoSize * 0.15;
+      ctx.fillStyle = 'white';
+      const boxRadius = logoSize * 0.2;
+      roundRect(ctx, logoX - padding, logoY - padding, logoSize + padding * 2, logoSize + padding * 2, boxRadius);
+      ctx.fill();
+
+      // Draw logo
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+    }
+
+    // Download
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `senestia-qr-${size}px.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast(`Downloaded ${size}×${size}px QR`);
+    });
+  }
+
+  // Download Wallpaper (QR on branded background)
+  async function downloadWallpaper() {
+    const width = 2880;
+    const height = 1800;
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    // Background gradient
+    const grad = ctx.createRadialGradient(width * 0.7, height * 0.3, 0, width * 0.7, height * 0.3, width);
+    grad.addColorStop(0, '#1f1d4a');
+    grad.addColorStop(0.5, '#161533');
+    grad.addColorStop(1, '#0a0a1f');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, width, height);
+
+    // Pink blob
+    const blob = ctx.createRadialGradient(width * 0.85, height * 0.2, 0, width * 0.85, height * 0.2, 600);
+    blob.addColorStop(0, 'rgba(236, 75, 138, 0.25)');
+    blob.addColorStop(1, 'rgba(236, 75, 138, 0)');
+    ctx.fillStyle = blob;
+    ctx.fillRect(0, 0, width, height);
+
+    // QR card background
+    const qrSize = 720;
+    const cardPadding = 80;
+    const cardSize = qrSize + cardPadding * 2;
+    const cardX = (width - cardSize) / 2;
+    const cardY = (height - cardSize) / 2 - 60;
+
+    // White card with shadow
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    ctx.shadowBlur = 80;
+    ctx.shadowOffsetY = 30;
+    ctx.fillStyle = currentBg;
+    roundRect(ctx, cardX, cardY, cardSize, cardSize, 40);
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+
+    // QR code
+    const qrCanvas = document.querySelector('#qrcode canvas');
+    if (qrCanvas) {
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(qrCanvas, cardX + cardPadding, cardY + cardPadding, qrSize, qrSize);
+    }
+
+    // Logo
+    if (showLogo) {
+      const logoImg = await svgToImage(senestiaLogoSVG);
+      const logoSize = qrSize * 0.18;
+      const logoX = cardX + cardPadding + (qrSize - logoSize) / 2;
+      const logoY = cardY + cardPadding + (qrSize - logoSize) / 2;
+
+      const padding = logoSize * 0.15;
+      ctx.fillStyle = 'white';
+      roundRect(ctx, logoX - padding, logoY - padding, logoSize + padding * 2, logoSize + padding * 2, logoSize * 0.2);
+      ctx.fill();
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+    }
+
+    // Caption text below card
+    ctx.fillStyle = '#FEFCF8';
+    ctx.textAlign = 'center';
+    ctx.font = '500 56px "Inter Tight", sans-serif';
+    const nameY = cardY + cardSize + 100;
+    ctx.fillText('Noppon "Sun" Siangchin', width / 2, nameY);
+
+    ctx.fillStyle = 'rgba(254, 252, 248, 0.6)';
+    ctx.font = '500 24px "JetBrains Mono", monospace';
+    ctx.fillText('SENIOR DATA ANALYST · SENESTIA', width / 2, nameY + 50);
+
+    // Small "scan me" hint
+    ctx.fillStyle = '#EC4B8A';
+    ctx.font = '500 18px "JetBrains Mono", monospace';
+    ctx.fillText('— SCAN TO CONNECT', width / 2, cardY - 40);
+
+    // Download
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'senestia-qr-wallpaper-2880x1800.png';
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Wallpaper downloaded (2880×1800)');
+    });
+  }
+
+  // Helper: rounded rectangle
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  // Init
+  initQR();
+</script>
+
+</body>
+</html>
