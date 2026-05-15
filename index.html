@@ -1311,7 +1311,22 @@ END:VCARD`;
     showToast('Contact saved — check your downloads');
   }
 
-  function saveCardImage() {
+  async function saveCardImage() {
+    // Use Web Share API on mobile — opens share sheet so user can "Save Image" to Photos
+    if (navigator.share && navigator.canShare) {
+      try {
+        const res = await fetch('business-card.png');
+        const blob = await res.blob();
+        const file = new File([blob], 'Noppon-Siangchin-Card.png', { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file] });
+          return;
+        }
+      } catch (e) {
+        if (e.name === 'AbortError') return; // user cancelled
+      }
+    }
+    // Fallback for desktop: direct download
     const a = document.createElement('a');
     a.href = 'business-card.png';
     a.download = 'Noppon-Siangchin-Card.png';
