@@ -46,6 +46,7 @@
   html {
     scroll-behavior: smooth;
     background-color: var(--cream);
+    overflow-x: hidden;
   }
 
   body {
@@ -910,6 +911,38 @@
 
     .logo-divider,
     .logo-text { display: none; }
+
+    .hero::before {
+      right: -50px;
+      width: 300px;
+      height: 300px;
+    }
+
+    h1 {
+      font-size: clamp(36px, 10vw, 52px);
+    }
+
+    .section-title {
+      font-size: clamp(28px, 7vw, 40px);
+    }
+
+    .contact-title {
+      font-size: clamp(28px, 7vw, 44px);
+    }
+
+    .company-stats {
+      gap: 24px;
+    }
+
+    .stat-num {
+      font-size: 22px;
+    }
+
+    .trust-inner {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
   }
 </style>
 </head>
